@@ -1,0 +1,714 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, Goal, Shield, Swords, Users, User, MessageSquare, Download, RotateCcw, Save, Brain } from 'lucide-react'; // Lucide Reactアイコンをインポート
+
+const App = () => {
+  // 選手候補のリスト
+  const playerCandidates = [
+    '選択してください', // デフォルトオプション
+    'しょうちゃん', 'トモ', 'キタ', 'ノム', 'ムラヤマ', 'サワ', 'ヒロキ',
+    'タカヒト', 'ケイジ', 'ヒビキ', 'カツキ', 'イトウ', 'ケイヤ', 'トシキ',
+    'トモミ', 'ショウタ', 'ヤマグチ', 'ソラ', 'エンマ'
+  ];
+
+  // フォーメーションの定義と各ポジションの座標
+  const formations = {
+    '4-4-2': {
+      name: '4-4-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'lm', label: 'LM', count: 1, type: 'midfielder', abbr: 'LM' },
+        { id: 'cm1', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'cm2', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'rm', label: 'RM', count: 1, type: 'midfielder', abbr: 'RM' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 40, y: 70 },
+        cb2: { x: 60, y: 70 },
+        rb: { x: 85, y: 65 },
+        lm: { x: 18, y: 35 },
+        cm1: { x: 40, y: 40 },
+        cm2: { x: 60, y: 40 },
+        rm: { x: 82, y: 35 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+    '4-3-3': {
+      name: '4-3-3',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'cm1', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'cdm', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'cm2', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'lw', label: 'LWG', count: 1, type: 'forward', abbr: 'LWG' },
+        { id: 'st', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'rw', label: 'RWG', count: 1, type: 'forward', abbr: 'RWG' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 40, y: 70 },
+        cb2: { x: 60, y: 70 },
+        rb: { x: 85, y: 65 },
+        cm1: { x: 30, y: 45 },
+        cdm: { x: 50, y: 55 },
+        cm2: { x: 70, y: 45 },
+        lw: { x: 25, y: 15 },
+        st: { x: 50, y: 10 },
+        rw: { x: 75, y: 15 },
+      },
+    },
+    '3-5-2': {
+      name: '3-5-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb3', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'lwb', label: 'LWB', count: 1, type: 'midfielder', abbr: 'LWB' },
+        { id: 'lm', label: 'LM', count: 1, type: 'midfielder', abbr: 'LM' },
+        { id: 'cdm', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'rm', label: 'RM', count: 1, type: 'midfielder', abbr: 'RM' },
+        { id: 'rwb', label: 'RWB', count: 1, type: 'midfielder', abbr: 'RWB' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        cb1: { x: 30, y: 70 },
+        cb2: { x: 50, y: 75 },
+        cb3: { x: 70, y: 70 },
+        lwb: { x: 10, y: 50 },
+        lm: { x: 30, y: 35 },
+        cdm: { x: 50, y: 50 },
+        rm: { x: 70, y: 35 },
+        rwb: { x: 90, y: 50 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+    '4-2-3-1': {
+      name: '4-2-3-1',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'dmf1', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'dmf2', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'lam', label: 'LWG', count: 1, type: 'midfielder', abbr: 'LWG' },
+        { id: 'cam', label: 'OMF', count: 1, type: 'midfielder', abbr: 'OMF' },
+        { id: 'ram', label: 'RWG', count: 1, type: 'midfielder', abbr: 'RWG' },
+        { id: 'st', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 40, y: 70 },
+        cb2: { x: 60, y: 70 },
+        rb: { x: 85, y: 65 },
+        dmf1: { x: 40, y: 48 },
+        dmf2: { x: 60, y: 48 },
+        lam: { x: 25, y: 25 },
+        cam: { x: 50, y: 30 },
+        ram: { x: 75, y: 25 },
+        st: { x: 50, y: 10 },
+      },
+    },
+    '5-3-2': {
+      name: '5-3-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lwb', label: 'LWB', count: 1, type: 'defender', abbr: 'LWB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb3', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rwb', label: 'RWB', count: 1, type: 'defender', abbr: 'RWB' },
+        { id: 'cm1', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'cdm', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'cm2', label: 'MF', count: 1, type: 'midfielder', abbr: 'MF' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lwb: { x: 10, y: 65 },
+        cb1: { x: 30, y: 75 },
+        cb2: { x: 50, y: 78 },
+        cb3: { x: 70, y: 75 },
+        rwb: { x: 90, y: 65 },
+        cm1: { x: 30, y: 40 },
+        cdm: { x: 50, y: 50 },
+        cm2: { x: 70, y: 40 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+  };
+
+  const [selectedFormation, setSelectedFormation] = useState('4-4-2'); // 現在選択されているフォーメーション
+  const [playerNames, setPlayerNames] = useState({}); // 各ポジションの選手名
+  const [dropdownOpen, setDropdownOpen] = useState(false); // フォーメーション選択ドロップダウンの開閉状態
+  const [comments, setComments] = useState(''); // コメント/戦術
+  const [teamName, setTeamName] = useState(''); // チーム名
+  const [savedFormations, setSavedFormations] = useState([]); // 保存されたフォーメーションのリスト
+  const [aiAnalysis, setAiAnalysis] = useState(''); // AI分析の結果
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false); // AI分析のロード状態
+
+  // フォーメーションが変更されたときに選手名を初期化する
+  useEffect(() => {
+    // 関数型更新を使用して、常に最新のplayerNamesに基づいて更新を行う
+    setPlayerNames(prevPlayerNames => {
+      const newNames = {};
+      const currentFormationPositions = formations[selectedFormation].positions;
+      currentFormationPositions.forEach(pos => {
+        // ポジションIDが同じ場合は既存の選手名を保持し、そうでなければ空文字列に設定
+        newNames[pos.id] = prevPlayerNames[pos.id] || '';
+      });
+      return newNames;
+    });
+  }, [selectedFormation, formations]); // playerNamesは依存配列から削除
+
+  // 選手名が変更されたときのハンドラ
+  const handlePlayerNameChange = useCallback((positionId, name) => {
+    setPlayerNames(prevNames => ({
+      ...prevNames,
+      [positionId]: name,
+    }));
+  }, []);
+
+  // フォーメーションが変更されたときのハンドラ
+  const handleFormationChange = useCallback((formationName) => {
+    setSelectedFormation(formationName);
+    setDropdownOpen(false);
+    setAiAnalysis(''); // フォーメーション変更時にAI分析をクリア
+  }, []);
+
+  // ドロップダウンの開閉を切り替えるハンドラ
+  const toggleDropdown = useCallback(() => {
+    setDropdownOpen(prev => !prev);
+  }, []);
+
+  // コメントが変更されたときのハンドラ
+  const handleCommentsChange = useCallback((e) => {
+    setComments(e.target.value);
+  }, []);
+
+  // チーム名が変更されたときのハンドラ
+  const handleTeamNameChange = useCallback((e) => {
+    setTeamName(e.target.value);
+  }, []);
+
+  // 現在のフォーメーションを保存する
+  const saveFormation = useCallback(() => {
+    const formationData = {
+      id: Date.now(),
+      name: teamName || `${formations[selectedFormation].name} - ${new Date().toLocaleDateString()}`,
+      formation: selectedFormation,
+      players: { ...playerNames },
+      comments,
+      createdAt: new Date().toISOString(),
+    };
+    setSavedFormations(prev => [...prev, formationData]);
+    console.log('フォーメーションが保存されました！'); // UIフィードバックのプレースホルダー
+  }, [selectedFormation, playerNames, comments, teamName, formations]);
+
+  // 保存されたフォーメーションをロードする
+  const loadFormation = useCallback((savedFormation) => {
+    setSelectedFormation(savedFormation.formation);
+    setPlayerNames(savedFormation.players);
+    setComments(savedFormation.comments);
+    setTeamName(savedFormation.name);
+    setAiAnalysis(''); // 新しいフォーメーションロード時にAI分析をクリア
+  }, []);
+
+  // 全てのデータをクリアする
+  const clearAll = useCallback(() => {
+    setPlayerNames({}); // 選手名を空にリセット（または'選択してください'）
+    setComments('');
+    setTeamName('');
+    setAiAnalysis(''); // AI分析をクリア
+  }, []);
+
+  // Gemini APIを呼び出して戦術分析を取得する関数
+  const getTacticalAnalysis = useCallback(async () => {
+      setIsLoadingAnalysis(true);
+      setAiAnalysis(''); // 以前の分析をクリア
+
+      // 現在の選手配置情報を整形
+      const currentPlayers = Object.keys(playerNames)
+          .filter(id => playerNames[id] && playerNames[id] !== '選択してください')
+          .map(id => {
+              const pos = formations[selectedFormation].positions.find(p => p.id === id);
+              return `${pos.abbr}: ${playerNames[id]}`;
+          })
+          .join(', ');
+
+      // Geminiモデルへのプロンプトを作成
+      const prompt = `あなたはサッカーの戦術アナリストです。以下の情報に基づいて、簡潔な戦術分析を提供してください。
+
+フォーメーション: ${formations[selectedFormation].name}
+現在の選手配置: ${currentPlayers || '選手はまだ配置されていません。'}
+コメント: ${comments || '特にコメントはありません。'}
+
+分析には、このフォーメーションの一般的な「強み」、起こりうる「弱み」、そして戦術を成功させるための「鍵となる選手または役割」を含めてください。`;
+
+      try {
+          let chatHistory = [];
+          chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+          const payload = { contents: chatHistory };
+          const apiKey = ""; // Canvas環境がAPIキーを自動的に提供
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+          const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+
+          // 応答構造をチェックし、AI分析結果をセット
+          if (result.candidates && result.candidates.length > 0 &&
+              result.candidates[0].content && result.candidates[0].content.parts &&
+              result.candidates[0].content.parts.length > 0) {
+              setAiAnalysis(result.candidates[0].content.parts[0].text);
+          } else {
+              setAiAnalysis('AI分析を生成できませんでした。');
+              console.error('Gemini API returned an unexpected structure:', result);
+          }
+      } catch (error) {
+          setAiAnalysis('AI分析の取得中にエラーが発生しました。ネットワーク接続を確認してください。');
+          console.error('Error calling Gemini API:', error);
+      } finally {
+          setIsLoadingAnalysis(false); // ロード状態を終了
+      }
+  }, [selectedFormation, playerNames, comments, formations]);
+
+  // フォーメーションを画像としてエクスポートする関数
+  const exportFormation = useCallback(() => {
+    // エクスポート対象の要素を取得
+    const exportElement = document.getElementById('formation-export-area');
+    if (!exportElement) {
+        console.error("Export area not found.");
+        return;
+    }
+
+    // Canvas要素を生成
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Canvasのサイズとスケールを設定（高解像度エクスポートのため）
+    const scale = 2; 
+    canvas.width = 800 * scale;
+    canvas.height = 1200 * scale; 
+    ctx.scale(scale, scale);
+    
+    // 背景を白で塗りつぶす
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 800, 1200);
+    
+    // チーム名を描画
+    if (teamName) {
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(teamName, 400, 40);
+    }
+    
+    // フォーメーション名を描画
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(formations[selectedFormation].name, 400, teamName ? 70 : 40);
+    
+    // サッカーフィールドを描画
+    const fieldY = teamName ? 70 : 50;
+    const fieldWidth = 350;
+    const fieldHeight = 580; 
+    const fieldX = (800 - fieldWidth) / 2;
+    
+    // フィールドの背景
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
+    
+    // フィールドの境界線
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(fieldX, fieldY, fieldWidth, fieldHeight);
+    
+    // 中央線
+    ctx.beginPath();
+    ctx.moveTo(fieldX, fieldY + fieldHeight / 2);
+    ctx.lineTo(fieldX + fieldWidth, fieldY + fieldHeight / 2);
+    ctx.stroke();
+    
+    // センターサークル
+    ctx.beginPath();
+    ctx.arc(fieldX + fieldWidth / 2, fieldY + fieldHeight / 2, 40, 0, 2 * Math.PI);
+    ctx.stroke();
+    
+    // ゴールエリア
+    const goalWidth = 80;
+    const goalHeight = 30;
+    // 上のゴールエリア
+    ctx.strokeRect(fieldX + (fieldWidth - goalWidth) / 2, fieldY, goalWidth, goalHeight);
+    // 下のゴールエリア
+    ctx.strokeRect(fieldX + (fieldWidth - goalWidth) / 2, fieldY + fieldHeight - goalHeight, goalWidth, goalHeight);
+    
+    // 選手を描画
+    Object.keys(formations[selectedFormation].coords).forEach(positionId => {
+      const player = playerNames[positionId];
+      const coord = formations[selectedFormation].coords[positionId];
+      const position = formations[selectedFormation].positions.find(p => p.id === positionId);
+      
+      const x = fieldX + (coord.x / 100) * fieldWidth;
+      let y = fieldY + (coord.y / 100) * fieldHeight; 
+
+      if (positionId === 'gk') { // GKの位置を調整
+        y = fieldY + (95 / 100) * fieldHeight;
+      }
+      
+      // ポジションタイプに応じたテキスト色を設定
+      let textColor = '#ffffff';
+      switch (position.type) {
+        case 'goalkeeper': textColor = '#fbbf24'; break; // Tailwind yellow-500
+        case 'defender': textColor = '#ef4444'; break; // Tailwind red-500
+        case 'midfielder': textColor = '#3b82f6'; break; // Tailwind blue-500
+        case 'forward': textColor = '#a855f7'; break; // Tailwind purple-500
+        default: textColor = '#6b7280'; break; // Tailwind gray-500
+      }
+      
+      // 選手名がある場合は選手名、ない場合はポジション略称を描画
+      if (player && player !== '' && player !== '選択してください') {
+        ctx.fillStyle = '#ffffff'; // 選手名の色は白
+        ctx.font = '16px sans-serif'; 
+        ctx.textAlign = 'center';
+        ctx.fillText(player, x, y - 4); // 選手名を表示
+      } else {
+        ctx.fillStyle = textColor; // ポジション略称はタイプ別の色
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(position.abbr, x, y - 4); // ポジション略称を表示
+      }
+    });
+    
+    // コメントセクションを描画
+    if (comments.trim()) {
+      const commentsY = fieldY + fieldHeight + 60; // フィールドの下に配置
+      
+      // コメントのタイトル
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('コメント・戦術', 50, commentsY);
+      
+      // コメントの背景
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(50, commentsY + 10, 700, 120);
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(50, commentsY + 10, 700, 120);
+      
+      // コメントのテキスト
+      ctx.fillStyle = '#374151';
+      ctx.font = '12px sans-serif';
+      
+      // テキストを折り返して描画
+      const lines = [];
+      let currentLine = '';
+      const words = comments.split(' '); // スペースで単語を分割
+      const maxWidth = 680; // テキストの最大幅
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        let testLine = currentLine ? currentLine + ' ' + word : word;
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+
+        if (testWidth > maxWidth && currentLine !== '') {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      lines.push(currentLine); // 最後の行を追加
+
+      let lineY = commentsY + 30;
+      const lineHeight = 16; // 行の高さ
+      for (let i = 0; i < lines.length; i++) {
+        if (lineY + lineHeight > commentsY + 110) break; // エリアを超えないようにする
+        ctx.fillText(lines[i], 60, lineY);
+        lineY += lineHeight;
+      }
+    }
+    
+    // CanvasをBlobに変換し、ダウンロード
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `formation-${teamName || selectedFormation}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }, [selectedFormation, teamName, playerNames, comments, formations]);
+
+  // ポジションタイプに応じた色を返す関数（UI表示用）
+  const getPositionColor = (type) => {
+    switch (type) {
+      case 'goalkeeper': return 'text-yellow-500';
+      case 'defender': return 'text-red-500';
+      case 'midfielder': return 'text-blue-500';
+      case 'forward': return 'text-purple-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4 font-inter">
+      {/* ヘッダー */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 mb-4 tracking-tight">
+          Partage Formation <span className="text-green-600">⚽</span>
+        </h1>
+        <p className="text-base sm:text-lg text-gray-600">サッカーチームのフォーメーションを作成・共有しましょう</p>
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-7xl">
+        {/* チーム名入力 */}
+        <div className="mb-6 text-center">
+          <input
+            type="text"
+            placeholder="チーム名を入力してください..."
+            value={teamName}
+            onChange={handleTeamNameChange}
+            className="text-xl sm:text-2xl font-bold text-center border-b-2 border-gray-300 focus:border-blue-500 bg-transparent outline-none px-4 py-2 w-full max-w-md rounded-md"
+          />
+        </div>
+
+        {/* アクションボタン群 */}
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <button
+            onClick={saveFormation}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <Save size={16} /> 保存
+          </button>
+          <button
+            onClick={exportFormation}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <Download size={16} /> 画像エクスポート
+          </button>
+          <button
+            onClick={clearAll}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <RotateCcw size={16} /> クリア
+          </button>
+          <button
+              onClick={getTacticalAnalysis}
+              disabled={isLoadingAnalysis}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+              {isLoadingAnalysis ? (
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+              ) : (
+                  <Brain size={16} />
+              )}
+              ✨ 戦術分析
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* 左側: フォーメーション選択 */}
+          <div className="w-full lg:w-1/4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-inner">
+            <h2 className="text-xl sm:text-2xl font-semibold text-blue-800 mb-6 flex items-center">
+              <Users className="mr-2 text-blue-600" /> フォーメーション
+            </h2>
+            <div className="relative w-full">
+              <button
+                onClick={toggleDropdown}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-between transition duration-300 ease-in-out transform hover:scale-105"
+              >
+                <span>{formations[selectedFormation].name}</span>
+                <ChevronDown className={`ml-2 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-blue-200">
+                  {Object.keys(formations).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleFormationChange(key)}
+                      className={`block w-full text-left px-4 py-3 text-gray-800 hover:bg-blue-100 transition duration-200 ${
+                        selectedFormation === key ? 'bg-blue-50 font-semibold text-blue-700' : ''
+                      }`}
+                    >
+                      {formations[key].name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 保存されたフォーメーション */}
+            {savedFormations.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">保存済み</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {savedFormations.map((saved) => (
+                    <button
+                      key={saved.id}
+                      onClick={() => loadFormation(saved)}
+                      className="w-full text-left p-2 bg-white rounded-lg hover:bg-blue-50 transition duration-200 text-sm border border-blue-200"
+                    >
+                      <div className="font-medium truncate">{saved.name}</div>
+                      <div className="text-gray-500 text-xs">{saved.formation}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 中央: 選手入力 (ドロップダウンに変更) */}
+          <div className="w-full lg:w-1/3 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-inner overflow-y-auto max-h-[70vh]">
+            <h2 className="text-xl sm:text-2xl font-semibold text-green-800 mb-6 flex items-center">
+              <User className="mr-2 text-green-600" /> 選手名入力
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              {formations[selectedFormation].positions.map(pos => (
+                <div key={pos.id} className="flex flex-col">
+                  <label htmlFor={pos.id} className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    {pos.type === 'goalkeeper' && <Goal className="w-4 h-4 mr-1 text-yellow-600" />}
+                    {pos.type === 'defender' && <Shield className="w-4 h-4 mr-1 text-red-600" />}
+                    {pos.type === 'midfielder' && <Users className="w-4 h-4 mr-1 text-blue-600" />}
+                    {pos.type === 'forward' && <Swords className="w-4 h-4 mr-1 text-purple-600" />}
+                    <span className="font-bold">{pos.abbr}</span> ({pos.label})
+                  </label>
+                  <input // ドロップダウンからdatalistに変更
+                    type="text"
+                    id={pos.id}
+                    list={`player-candidates-${pos.id}`}
+                    value={playerNames[pos.id] || ''}
+                    onChange={(e) => handlePlayerNameChange(pos.id, e.target.value)}
+                    placeholder={`${pos.label} の選手名`}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200 shadow-sm"
+                  />
+                  <datalist id={`player-candidates-${pos.id}`}>
+                    {playerCandidates.filter(name => name !== '選択してください').map(playerName => (
+                      <option key={playerName} value={playerName} />
+                    ))}
+                  </datalist>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 右側: フォーメーション表示とコメント */}
+          <div className="w-full lg:w-2/5 flex flex-col items-center" id="formation-export-area">
+            {/* フォーメーション表示 */}
+            <div className="w-full mb-6">
+              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-4 text-center">
+                {teamName && <div className="text-base sm:text-lg text-gray-600 mb-2">{teamName}</div>}
+                {formations[selectedFormation].name}
+              </h2>
+              
+              {/* サッカーフィールド */}
+              <div className="relative bg-green-600 rounded-2xl shadow-2xl overflow-hidden w-full mx-auto border-4 border-white"
+                   style={{ aspectRatio: '4/3', maxWidth: '400px' }}>
+                {/* フィールドマーキング */}
+                <div className="absolute inset-0">
+                  {/* 中央線 */}
+                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white opacity-70 transform -translate-y-0.5"></div>
+                  {/* センターサークル */}
+                  <div className="absolute top-1/2 left-1/2 w-20 h-20 border-2 border-white opacity-70 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+                  {/* ゴールエリア */}
+                  <div className="absolute bottom-0 left-1/2 w-16 h-8 border-2 border-white border-b-0 opacity-70 transform -translate-x-1/2"></div>
+                  <div className="absolute top-0 left-1/2 w-16 h-8 border-2 border-white border-t-0 opacity-70 transform -translate-x-1/2"></div>
+                </div>
+
+                {/* 選手ポジション */}
+                {Object.keys(formations[selectedFormation].coords).map(positionId => {
+                  const player = playerNames[positionId];
+                  const coord = formations[selectedFormation].coords[positionId];
+                  const position = formations[selectedFormation].positions.find(p => p.id === positionId);
+
+                  return (
+                    <div
+                      key={positionId}
+                      className="absolute flex flex-col items-center justify-center text-center w-fit h-fit"
+                      style={{
+                        left: `${coord.x}%`,
+                        top: `${coord.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      {/* 選手名またはポジション略称 */}
+                      {player && player !== '' && player !== '選択してください' ? (
+                        <div className="text-lg font-medium max-w-20 truncate text-white">
+                          {player}
+                        </div>
+                      ) : (
+                        <div className={`text-lg ${getPositionColor(position.type)}`}>
+                          {position.abbr}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* コメントセクション */}
+            <div className="w-full p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-inner">
+              <h2 className="text-xl sm:text-2xl font-semibold text-purple-800 mb-4 flex items-center">
+                <MessageSquare className="mr-2 text-purple-600" /> コメント・戦術
+              </h2>
+              <textarea
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition duration-200 shadow-sm resize-none"
+                rows="4"
+                placeholder="戦術やコメントを入力してください..."
+                value={comments}
+                onChange={handleCommentsChange}
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        {/* AI分析セクション */}
+        {aiAnalysis && (
+            <div className="mt-8 p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl shadow-xl">
+                <h2 className="text-2xl font-semibold text-indigo-800 mb-4 flex items-center">
+                    <Brain className="mr-2 text-indigo-600" /> AI 戦術分析
+                </h2>
+                <div className="bg-white p-4 rounded-lg shadow-inner border border-indigo-200 whitespace-pre-wrap">
+                    {aiAnalysis}
+                </div>
+            </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
