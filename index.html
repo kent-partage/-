@@ -1,0 +1,623 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, Goal, Shield, Swords, Users, User, MessageSquare, Download, Upload, RotateCcw, Save } from 'lucide-react';
+
+const App = () => {
+  // 選手候補のリスト
+  const playerCandidates = [
+    '選択してください', // Default option
+    'しょうちゃん', 'トモ', 'キタ', 'ノム', 'ムラヤマ', 'サワ', 'ヒロキ',
+    'タカヒト', 'ケイジ', 'ヒビキ', 'カツキ', 'イトウ', 'ケイヤ', 'トシキ',
+    'トモミ', 'ショウタ', 'ヤマグチ', 'ソラ', 'エンマ'
+  ];
+
+  // Formation definitions with positions and coordinates
+  const formations = {
+    '4-4-2': {
+      name: '4-4-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'lm', label: 'LM', count: 1, type: 'midfielder', abbr: 'LM' },
+        { id: 'cm1', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'cm2', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'rm', label: 'RM', count: 1, type: 'midfielder', abbr: 'RM' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 35, y: 70 },
+        cb2: { x: 65, y: 70 },
+        rb: { x: 85, y: 65 },
+        lm: { x: 18, y: 35 },
+        cm1: { x: 40, y: 40 },
+        cm2: { x: 60, y: 40 },
+        rm: { x: 82, y: 35 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+    '4-3-3': {
+      name: '4-3-3',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'cm1', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'cdm', label: 'CDM', count: 1, type: 'midfielder', abbr: 'CDM' },
+        { id: 'cm2', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'lw', label: 'LWG', count: 1, type: 'forward', abbr: 'LWG' },
+        { id: 'st', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'rw', label: 'RWG', count: 1, type: 'forward', abbr: 'RWG' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 35, y: 70 },
+        cb2: { x: 65, y: 70 },
+        rb: { x: 85, y: 65 },
+        cm1: { x: 30, y: 45 },
+        cdm: { x: 50, y: 55 },
+        cm2: { x: 70, y: 45 },
+        lw: { x: 25, y: 15 },
+        st: { x: 50, y: 10 },
+        rw: { x: 75, y: 15 },
+      },
+    },
+    '3-5-2': {
+      name: '3-5-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb3', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'lwb', label: 'LWB', count: 1, type: 'midfielder', abbr: 'LWB' },
+        { id: 'lm', label: 'LM', count: 1, type: 'midfielder', abbr: 'LM' },
+        { id: 'cdm', label: 'CDM', count: 1, type: 'midfielder', abbr: 'CDM' },
+        { id: 'rm', label: 'RM', count: 1, type: 'midfielder', abbr: 'RM' },
+        { id: 'rwb', label: 'RWB', count: 1, type: 'midfielder', abbr: 'RWB' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        cb1: { x: 25, y: 70 },
+        cb2: { x: 50, y: 75 },
+        cb3: { x: 75, y: 70 },
+        lwb: { x: 10, y: 50 },
+        lm: { x: 30, y: 35 },
+        cdm: { x: 50, y: 50 },
+        rm: { x: 70, y: 35 },
+        rwb: { x: 90, y: 50 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+    '4-2-3-1': {
+      name: '4-2-3-1',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lb', label: 'LSB', count: 1, type: 'defender', abbr: 'LSB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rb', label: 'RSB', count: 1, type: 'defender', abbr: 'RSB' },
+        { id: 'dmf1', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'dmf2', label: 'DMF', count: 1, type: 'midfielder', abbr: 'DMF' },
+        { id: 'lam', label: 'LWG', count: 1, type: 'midfielder', abbr: 'LWG' },
+        { id: 'cam', label: 'OMF', count: 1, type: 'midfielder', abbr: 'OMF' },
+        { id: 'ram', label: 'RWG', count: 1, type: 'midfielder', abbr: 'RWG' },
+        { id: 'st', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lb: { x: 15, y: 65 },
+        cb1: { x: 35, y: 70 },
+        cb2: { x: 65, y: 70 },
+        rb: { x: 85, y: 65 },
+        dmf1: { x: 40, y: 55 },
+        dmf2: { x: 60, y: 55 },
+        lam: { x: 25, y: 25 },
+        cam: { x: 50, y: 30 },
+        ram: { x: 75, y: 25 },
+        st: { x: 50, y: 10 },
+      },
+    },
+    '5-3-2': {
+      name: '5-3-2',
+      positions: [
+        { id: 'gk', label: 'GK', count: 1, type: 'goalkeeper', abbr: 'GK' },
+        { id: 'lwb', label: 'LWB', count: 1, type: 'defender', abbr: 'LWB' },
+        { id: 'cb1', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb2', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'cb3', label: 'CB', count: 1, type: 'defender', abbr: 'CB' },
+        { id: 'rwb', label: 'RWB', count: 1, type: 'defender', abbr: 'RWB' },
+        { id: 'cm1', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'cdm', label: 'CDM', count: 1, type: 'midfielder', abbr: 'CDM' },
+        { id: 'cm2', label: 'CM', count: 1, type: 'midfielder', abbr: 'CM' },
+        { id: 'st1', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+        { id: 'st2', label: 'FW', count: 1, type: 'forward', abbr: 'FW' },
+      ],
+      coords: {
+        gk: { x: 50, y: 92 },
+        lwb: { x: 10, y: 65 },
+        cb1: { x: 25, y: 75 },
+        cb2: { x: 50, y: 78 },
+        cb3: { x: 75, y: 75 },
+        rwb: { x: 90, y: 65 },
+        cm1: { x: 30, y: 40 },
+        cdm: { x: 50, y: 50 },
+        cm2: { x: 70, y: 40 },
+        st1: { x: 40, y: 15 },
+        st2: { x: 60, y: 15 },
+      },
+    },
+  };
+
+  const [selectedFormation, setSelectedFormation] = useState('4-4-2');
+  const [playerNames, setPlayerNames] = useState({});
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [comments, setComments] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [savedFormations, setSavedFormations] = useState([]);
+
+  // Initialize player names when formation changes
+  useEffect(() => {
+    const initialNames = {};
+    const currentFormationPositions = formations[selectedFormation].positions;
+    currentFormationPositions.forEach(pos => {
+      // Retain existing player name if the position ID remains the same, otherwise set to empty.
+      // Or, set to '選択してください' as a default for new selections.
+      initialNames[pos.id] = playerNames[pos.id] || '選択してください';
+    });
+    setPlayerNames(initialNames);
+  }, [selectedFormation, formations]); // Added formations to dependency array
+
+  const handlePlayerNameChange = useCallback((positionId, name) => {
+    setPlayerNames(prevNames => ({
+      ...prevNames,
+      [positionId]: name,
+    }));
+  }, []);
+
+  const handleFormationChange = useCallback((formationName) => {
+    setSelectedFormation(formationName);
+    setDropdownOpen(false);
+  }, []);
+
+  const toggleDropdown = useCallback(() => {
+    setDropdownOpen(prev => !prev);
+  }, []);
+
+  const handleCommentsChange = useCallback((e) => {
+    setComments(e.target.value);
+  }, []);
+
+  const handleTeamNameChange = useCallback((e) => {
+    setTeamName(e.target.value);
+  }, []);
+
+  // Save current formation
+  const saveFormation = useCallback(() => {
+    const formationData = {
+      id: Date.now(),
+      name: teamName || `${formations[selectedFormation].name} - ${new Date().toLocaleDateString()}`,
+      formation: selectedFormation,
+      players: { ...playerNames },
+      comments,
+      createdAt: new Date().toISOString(),
+    };
+    setSavedFormations(prev => [...prev, formationData]);
+    // Replace alert with a custom modal or message box
+    // alert('フォーメーションが保存されました！');
+    // For now, a simple console log as a placeholder for UI feedback
+    console.log('フォーメーションが保存されました！');
+  }, [selectedFormation, playerNames, comments, teamName, formations]);
+
+  // Load saved formation
+  const loadFormation = useCallback((savedFormation) => {
+    setSelectedFormation(savedFormation.formation);
+    setPlayerNames(savedFormation.players);
+    setComments(savedFormation.comments);
+    setTeamName(savedFormation.name);
+  }, []);
+
+  // Clear all data
+  const clearAll = useCallback(() => {
+    setPlayerNames({}); // Reset player names to empty (or '選択してください')
+    setComments('');
+    setTeamName('');
+  }, []);
+
+  // Export formation as image
+  const exportFormation = useCallback(() => {
+    const exportElement = document.getElementById('formation-export-area');
+    if (!exportElement) return;
+
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    const scale = 2; // Higher scale for better quality
+    canvas.width = 800 * scale;
+    canvas.height = 1000 * scale;
+    ctx.scale(scale, scale);
+    
+    // Fill background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 800, 1000);
+    
+    // Draw team name
+    if (teamName) {
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(teamName, 400, 40);
+    }
+    
+    // Draw formation name
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(formations[selectedFormation].name, 400, teamName ? 70 : 40);
+    
+    // Draw soccer field
+    const fieldY = teamName ? 90 : 60;
+    const fieldWidth = 350;
+    const fieldHeight = 450;
+    const fieldX = (800 - fieldWidth) / 2;
+    
+    // Field background
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
+    
+    // Field border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(fieldX, fieldY, fieldWidth, fieldHeight);
+    
+    // Center line
+    ctx.beginPath();
+    ctx.moveTo(fieldX, fieldY + fieldHeight / 2);
+    ctx.lineTo(fieldX + fieldWidth, fieldY + fieldHeight / 2);
+    ctx.stroke();
+    
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(fieldX + fieldWidth / 2, fieldY + fieldHeight / 2, 40, 0, 2 * Math.PI);
+    ctx.stroke();
+    
+    // Goal areas
+    const goalWidth = 80;
+    const goalHeight = 30;
+    // Top goal area
+    ctx.strokeRect(fieldX + (fieldWidth - goalWidth) / 2, fieldY, goalWidth, goalHeight);
+    // Bottom goal area
+    ctx.strokeRect(fieldX + (fieldWidth - goalWidth) / 2, fieldY + fieldHeight - goalHeight, goalWidth, goalHeight);
+    
+    // Draw players
+    Object.keys(formations[selectedFormation].coords).forEach(positionId => {
+      const player = playerNames[positionId];
+      const coord = formations[selectedFormation].coords[positionId];
+      const position = formations[selectedFormation].positions.find(p => p.id === positionId);
+      
+      const x = fieldX + (coord.x / 100) * fieldWidth;
+      const y = fieldY + (coord.y / 100) * fieldHeight;
+      
+      // Draw player circle
+      ctx.beginPath();
+      ctx.arc(x, y, 15, 0, 2 * Math.PI);
+      
+      // Set fill color based on position type (for canvas export)
+      let playerCircleColor = '#ffffff'; // Default to white
+      switch (position.type) {
+        case 'goalkeeper': playerCircleColor = '#fbbf24'; break; // Yellow-500
+        case 'defender': playerCircleColor = '#ef4444'; break; // Red-500
+        case 'midfielder': playerCircleColor = '#3b82f6'; break; // Blue-500
+        case 'forward': playerCircleColor = '#a855f7'; break; // Purple-500
+        default: playerCircleColor = '#6b7280'; break; // Gray-500
+      }
+      ctx.fillStyle = playerCircleColor;
+      ctx.fill();
+      ctx.strokeStyle = '#000000'; // Black border for players
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw position abbr
+      ctx.fillStyle = '#ffffff'; // White text for position abbr
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(position.abbr, x, y - 5);
+      
+      // Draw player name, but only if it's not the default "選択してください"
+      if (player && player !== '選択してください') {
+        ctx.fillStyle = '#ffffff'; // White text for player name
+        ctx.font = '10px sans-serif';
+        ctx.fillText(player, x, y + 10);
+      }
+    });
+    
+    // Draw comments section
+    if (comments.trim()) {
+      const commentsY = fieldY + fieldHeight + 30;
+      
+      // Comments title
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('コメント・戦術', 50, commentsY);
+      
+      // Comments background
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(50, commentsY + 10, 700, 120);
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(50, commentsY + 10, 700, 120);
+      
+      // Comments text
+      ctx.fillStyle = '#374151';
+      ctx.font = '12px sans-serif';
+      
+      // Wrap text
+      const lines = [];
+      let currentLine = '';
+      const words = comments.split(' ');
+      const maxWidth = 680; // Max width for text in canvas
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        let testLine = currentLine ? currentLine + ' ' + word : word;
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+
+        if (testWidth > maxWidth && currentLine !== '') {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      lines.push(currentLine); // Add the last line
+
+      let lineY = commentsY + 30;
+      const lineHeight = 16;
+      for (let i = 0; i < lines.length; i++) {
+        if (lineY + lineHeight > commentsY + 110) break; // Prevent overflow
+        ctx.fillText(lines[i], 60, lineY);
+        lineY += lineHeight;
+      }
+    }
+    
+    // Convert canvas to blob and download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `formation-${teamName || selectedFormation}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }, [selectedFormation, teamName, playerNames, comments, formations]);
+
+  // Position color mapping (for UI display)
+  const getPositionColor = (type) => {
+    switch (type) {
+      case 'goalkeeper': return 'bg-yellow-500 text-white';
+      case 'defender': return 'bg-red-500 text-white';
+      case 'midfielder': return 'bg-blue-500 text-white';
+      case 'forward': return 'bg-purple-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4 font-inter">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-5xl font-bold text-gray-800 mb-4 tracking-tight">
+          Partage Formation <span className="text-green-600">⚽</span>
+        </h1>
+        <p className="text-gray-600 text-lg">Create and share your soccer team formations</p>
+      </div>
+
+      <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-7xl">
+        {/* Team Name Input */}
+        <div className="mb-6 text-center">
+          <input
+            type="text"
+            placeholder="チーム名を入力してください..."
+            value={teamName}
+            onChange={handleTeamNameChange}
+            className="text-2xl font-bold text-center border-b-2 border-gray-300 focus:border-blue-500 bg-transparent outline-none px-4 py-2 w-full max-w-md rounded-md"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <button
+            onClick={saveFormation}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <Save size={16} /> 保存
+          </button>
+          <button
+            onClick={exportFormation}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <Download size={16} /> 画像エクスポート
+          </button>
+          <button
+            onClick={clearAll}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg"
+          >
+            <RotateCcw size={16} /> クリア
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left: Formation Selection */}
+          <div className="w-full lg:w-1/4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-inner">
+            <h2 className="text-2xl font-semibold text-blue-800 mb-6 flex items-center">
+              <Users className="mr-2 text-blue-600" /> フォーメーション
+            </h2>
+            <div className="relative w-full">
+              <button
+                onClick={toggleDropdown}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-between transition duration-300 ease-in-out transform hover:scale-105"
+              >
+                <span>{formations[selectedFormation].name}</span>
+                <ChevronDown className={`ml-2 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-xl overflow-hidden border border-blue-200">
+                  {Object.keys(formations).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleFormationChange(key)}
+                      className={`block w-full text-left px-4 py-3 text-gray-800 hover:bg-blue-100 transition duration-200 ${
+                        selectedFormation === key ? 'bg-blue-50 font-semibold text-blue-700' : ''
+                      }`}
+                    >
+                      {formations[key].name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Saved Formations */}
+            {savedFormations.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">保存済み</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {savedFormations.map((saved) => (
+                    <button
+                      key={saved.id}
+                      onClick={() => loadFormation(saved)}
+                      className="w-full text-left p-2 bg-white rounded-lg hover:bg-blue-50 transition duration-200 text-sm border border-blue-200"
+                    >
+                      <div className="font-medium truncate">{saved.name}</div>
+                      <div className="text-gray-500 text-xs">{saved.formation}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Center: Player Input (Changed to Dropdown) */}
+          <div className="w-full lg:w-1/3 p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-inner overflow-y-auto max-h-[70vh]">
+            <h2 className="text-2xl font-semibold text-green-800 mb-6 flex items-center">
+              <User className="mr-2 text-green-600" /> 選手名入力
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              {formations[selectedFormation].positions.map(pos => (
+                <div key={pos.id} className="flex flex-col">
+                  <label htmlFor={pos.id} className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    {pos.type === 'goalkeeper' && <Goal className="w-4 h-4 mr-1 text-yellow-600" />}
+                    {pos.type === 'defender' && <Shield className="w-4 h-4 mr-1 text-red-600" />}
+                    {pos.type === 'midfielder' && <Users className="w-4 h-4 mr-1 text-blue-600" />}
+                    {pos.type === 'forward' && <Swords className="w-4 h-4 mr-1 text-purple-600" />}
+                    <span className="font-bold">{pos.abbr}</span> ({pos.label})
+                  </label>
+                  <select
+                    id={pos.id}
+                    value={playerNames[pos.id] || '選択してください'}
+                    onChange={(e) => handlePlayerNameChange(pos.id, e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition duration-200 shadow-sm bg-white"
+                  >
+                    {playerCandidates.map(playerName => (
+                      <option key={playerName} value={playerName}>
+                        {playerName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Formation Display and Comments */}
+          <div className="w-full lg:w-2/5 flex flex-col items-center" id="formation-export-area">
+            {/* Formation Display */}
+            <div className="w-full mb-6">
+              <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">
+                {teamName && <div className="text-lg text-gray-600 mb-2">{teamName}</div>}
+                {formations[selectedFormation].name}
+              </h2>
+              
+              {/* Soccer Field */}
+              <div className="relative bg-green-600 rounded-2xl shadow-2xl overflow-hidden w-full mx-auto border-4 border-white"
+                   style={{ aspectRatio: '4/3', maxWidth: '400px' }}>
+                {/* Field markings */}
+                <div className="absolute inset-0">
+                  {/* Center line */}
+                  <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white opacity-70 transform -translate-x-0.5"></div>
+                  {/* Center circle */}
+                  <div className="absolute top-1/2 left-1/2 w-20 h-20 border-2 border-white opacity-70 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+                  {/* Goal areas */}
+                  <div className="absolute bottom-0 left-1/2 w-16 h-8 border-2 border-white border-b-0 opacity-70 transform -translate-x-1/2"></div>
+                  <div className="absolute top-0 left-1/2 w-16 h-8 border-2 border-white border-t-0 opacity-70 transform -translate-x-1/2"></div>
+                </div>
+
+                {/* Player positions */}
+                {Object.keys(formations[selectedFormation].coords).map(positionId => {
+                  const player = playerNames[positionId];
+                  const coord = formations[selectedFormation].coords[positionId];
+                  const position = formations[selectedFormation].positions.find(p => p.id === positionId);
+
+                  return (
+                    <div
+                      key={positionId}
+                      className="absolute flex flex-col items-center justify-center text-center w-fit h-fit"
+                      style={{
+                        left: `${coord.x}%`,
+                        top: `${coord.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                        color: 'white',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      {/* Player Circle in UI */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center p-1 font-bold text-sm ${getPositionColor(position.type)} shadow-md`}>
+                        {position.abbr}
+                      </div>
+                      {player && player !== '選択してください' && (
+                        <div className="text-xs font-medium mt-1 max-w-20 truncate">
+                          {player}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="w-full p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-inner">
+              <h2 className="text-2xl font-semibold text-purple-800 mb-4 flex items-center">
+                <MessageSquare className="mr-2 text-purple-600" /> コメント・戦術
+              </h2>
+              <textarea
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition duration-200 shadow-sm resize-none"
+                rows="4"
+                placeholder="戦術やコメントを入力してください..."
+                value={comments}
+                onChange={handleCommentsChange}
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
